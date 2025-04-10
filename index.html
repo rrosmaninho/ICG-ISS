@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ISS Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: black;
+      }
+      #issButton {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #issButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      #resetButton {
+        position: fixed;
+        bottom: 20px;
+        right: 150px; /* Position it to the left of the ISS button */
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #resetButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="bg"></canvas>
+    <button id="issButton">Track ISS</button>
+    <button id="resetButton">Reset View</button>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
