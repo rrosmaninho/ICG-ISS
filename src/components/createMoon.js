@@ -5,10 +5,15 @@ export function createMoon() {
   const MOON_RADIUS = 1.737;
   const MOON_DISTANCE = 384.400; // Average distance from Earth in thousands of km
   const geometry = new THREE.SphereGeometry(MOON_RADIUS, 32, 32);
+  
+  // Load moon texture
+  const textureLoader = new THREE.TextureLoader();
+  const moonTexture = textureLoader.load('/textures/8k_moon.jpg');
+  
   const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.8,
-    metalness: 0.1,
+    map: moonTexture,
+    roughness: 0.9,
+    metalness: 0.0,
   });
 
   const moon = new THREE.Mesh(geometry, material);

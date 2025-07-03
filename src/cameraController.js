@@ -36,7 +36,10 @@ export function createCamera(scene, canvas) {
 
   // Add tracking state
   const state = {
-    isTrackingISS: false
+    isTrackingISS: false,
+    isTrackingSun: false,
+    isTrackingMoon: false,
+    isTrackingEarth: false
   };
 
   function updateISSTracking(iss, earth) {

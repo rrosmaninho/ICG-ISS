@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ISS Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: black;
+      }
+      #issButton {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #issButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      #resetButton {
+        position: fixed;
+        bottom: 20px;
+        right: 150px; /* Position it to the left of the ISS button */
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #resetButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      #sunButton {
+        position: fixed;
+        bottom: 20px;
+        right: 280px; /* Position it to the left of the reset button */
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #sunButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      #moonButton {
+        position: fixed;
+        bottom: 20px;
+        right: 410px; /* Position it to the left of the sun button */
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #moonButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      #earthButton {
+        position: fixed;
+        bottom: 20px;
+        right: 540px; /* Position it to the left of the moon button */
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+      }
+      #earthButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      #speedSlider {
+        position: fixed;
+        bottom: 60px;
+        right: 20px;
+        width: 480px;
+      }
+      #speedLabel {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        color: white;
+        font-family: sans-serif;
+      }
+      
+      /* Pause Menu Styles */
+      #pauseButton {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: sans-serif;
+        transition: background 0.3s;
+        z-index: 1000;
+      }
+      #pauseButton:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      #pauseMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+      }
+      
+      #pauseMenu.active {
+        display: flex;
+      }
+      
+      .pause-content {
+        background: rgba(20, 20, 30, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 1200px;
+        width: 95%;
+        text-align: center;
+        color: white;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .pause-main-content {
+        display: flex;
+        gap: 30px;
+        align-items: flex-start;
+      }
+      
+      .pause-left-panel {
+        flex: 1;
+        min-width: 400px;
+        max-width: 500px;
+      }
+      
+      .pause-right-panel {
+        flex: 1.2;
+        min-width: 500px;
+      }
+      
+      .main-preview {
+        width: 100%;
+        height: 500px;
+        border: 3px solid rgba(74, 158, 255, 0.5);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        position: relative;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 0 25px rgba(74, 158, 255, 0.2);
+      }
+      
+      .main-preview canvas {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 9px;
+      }
+      
+      .main-preview-placeholder {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1.3em;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .main-preview-placeholder::before {
+        content: "🌌";
+        font-size: 3em;
+        opacity: 0.4;
+      }
+      
+      .preview-controls {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9em;
+        margin-top: 10px;
+      }
+      
+      .object-info {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        text-align: left;
+      }
+      
+      .object-info h4 {
+        margin: 0 0 8px 0;
+        color: #4a9eff;
+        font-size: 1.1em;
+      }
+      
+      .object-info p {
+        margin: 5px 0;
+        font-size: 0.9em;
+        color: #ccc;
+      }
+      
+      .pause-content h2 {
+        margin-top: 0;
+        color: #4a9eff;
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      
+      .object-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin: 20px 0;
+      }
+      
+      .object-card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .object-card:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(74, 158, 255, 0.3);
+      }
+      
+      .object-card.selected {
+        border-color: #4a9eff;
+        background: rgba(74, 158, 255, 0.2);
+        box-shadow: 0 0 20px rgba(74, 158, 255, 0.4);
+      }
+      
+      .object-preview {
+        width: 80px;
+        height: 80px;
+        margin: 10px auto;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+      
+      .object-preview canvas {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 6px;
+      }
+      
+      .object-card h3 {
+        margin: 8px 0 5px 0;
+        color: #4a9eff;
+        font-size: 1em;
+      }
+      
+      .object-card p {
+        margin: 5px 0 0 0;
+        font-size: 0.8em;
+        color: #ccc;
+      }
+      
+      .menu-buttons {
+        margin-top: 25px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      
+      .menu-btn {
+        padding: 10px 20px;
+        background: rgba(74, 158, 255, 0.8);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: sans-serif;
+        font-size: 1em;
+        transition: all 0.3s ease;
+      }
+      
+      .menu-btn:hover {
+        background: rgba(74, 158, 255, 1);
+        transform: translateY(-1px);
+      }
+      
+      .menu-btn.secondary {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      
+      .menu-btn.secondary:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="bg"></canvas>
+    
+    <!-- Pause Button -->
+    <button id="pauseButton">⏸️ Pause</button>
+    
+    <!-- Pause Menu -->
+    <div id="pauseMenu">
+      <div class="pause-content">
+        <h2>🚀 Solar System Explorer</h2>
+        
+        <div class="pause-main-content">
+          <!-- Left Panel: Object Selection -->
+          <div class="pause-left-panel">
+            <p>Select an object to view:</p>
+            
+            <div class="object-grid">
+              <div class="object-card" data-object="earth">
+                <h3>🌍 Earth</h3>
+                <div class="object-preview" id="earth-preview"></div>
+                <p>Home planet with day/night cycles</p>
+              </div>
+              
+              <div class="object-card" data-object="iss">
+                <h3>🛰️ ISS</h3>
+                <div class="object-preview" id="iss-preview"></div>
+                <p>International Space Station</p>
+              </div>
+              
+              <div class="object-card" data-object="moon">
+                <h3>🌑 Moon</h3>
+                <div class="object-preview" id="moon-preview"></div>
+                <p>Earth's natural satellite</p>
+              </div>
+              
+              <div class="object-card" data-object="sun">
+                <h3>☀️ Sun</h3>
+                <div class="object-preview" id="sun-preview"></div>
+                <p>Our star with corona effects</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Panel: Main Preview -->
+          <div class="pause-right-panel">
+            <div class="main-preview" id="main-preview">
+              <div class="main-preview-placeholder">
+                Click an object to preview
+              </div>
+            </div>
+            <div class="preview-controls">
+              🖱️ Click and drag to rotate • 🖱️ Scroll to zoom
+            </div>
+            
+            <div class="object-info" id="object-info" style="display: none;">
+              <h4 id="info-title">Object Name</h4>
+              <p id="info-description">Object description will appear here</p>
+              <p id="info-details">Additional details about the object</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="menu-buttons">
+          <button class="menu-btn" id="focusSelectedBtn" style="display: none;">🎯 Focus on Object</button>
+          <button class="menu-btn" id="resumeBtn">▶️ Resume</button>
+          <button class="menu-btn secondary" id="resetViewBtn">🔄 Reset View</button>
+          <button class="menu-btn secondary" id="freeViewBtn">🎮 Free View</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Existing Controls -->
+    <button id="earthButton">Track Earth</button>
+    <button id="moonButton">Track Moon</button>
+    <button id="sunButton">Track Sun</button>
+    <button id="testSunViewButton">Test Sun from Earth</button>
+    <button id="resetButton">Reset View</button>
+    <button id="issButton">Track ISS</button>
+    <label id="speedLabel" for="speedSlider">Simulation Speed</label>
+    <input type="range" min="-10" max="100" value="1" id="speedSlider">
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export function createISS() {
   const group = new THREE.Group();
@@ -12,18 +13,107 @@ export function createISS() {
   const EARTH_RADIUS = 6.378;
   const SCALE = 0.8; // Same scale factor as Earth
   
-  // Scale ISS relative to Earth
-  // const scaleFactor = 50; // Increase visibility while maintaining relative scale
+  // Scale ISS relative to Earth with a visibility multiplier
+  const VISIBILITY_MULTIPLIER = 200; // Make ISS 200x larger for visibility while maintaining relative position
   group.scale.set(
-    (ISS_LENGTH / EARTH_RADIUS) * SCALE,
-    (ISS_WIDTH / EARTH_RADIUS) * SCALE,
-    (ISS_HEIGHT / EARTH_RADIUS) * SCALE
+    (ISS_LENGTH / EARTH_RADIUS) * SCALE * VISIBILITY_MULTIPLIER,
+    (ISS_WIDTH / EARTH_RADIUS) * SCALE * VISIBILITY_MULTIPLIER,
+    (ISS_HEIGHT / EARTH_RADIUS) * SCALE * VISIBILITY_MULTIPLIER
   );
   
-  // ISS orbits at ~408km above Earth's surface
-  const ISS_ORBIT_RADIUS = EARTH_RADIUS + 0.408; // Earth radius + 408km orbit
-  group.position.set(ISS_ORBIT_RADIUS * SCALE, 0, 0);
+  // Note: Position will be set dynamically in main.js for orbital motion
+  // ISS orbits at ~408km above Earth's surface, position handled by updateISSOrbit()
+  group.position.set(0, 0, 0); // Start at origin, main.js will position it
+  
+  // Create a simple placeholder ISS immediately for instant display
+  const placeholderGroup = new THREE.Group();
+  placeholderGroup.name = 'ISS_Placeholder';
+  
+  // Simple ISS representation
+  const coreGeometry = new THREE.BoxGeometry(0.5, 0.2, 0.1);
+  const coreMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const core = new THREE.Mesh(coreGeometry, coreMaterial);
+  placeholderGroup.add(core);
+  
+  // Solar panels
+  const panelGeometry = new THREE.BoxGeometry(1.0, 0.05, 0.3);
+  const panelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  
+  const panel1 = new THREE.Mesh(panelGeometry, panelMaterial);
+  panel1.position.set(0, 0, 0.4);
+  placeholderGroup.add(panel1);
+  
+  const panel2 = new THREE.Mesh(panelGeometry, panelMaterial);
+  panel2.position.set(0, 0, -0.4);
+  placeholderGroup.add(panel2);
+  
+  // Add placeholder to group immediately
+  group.add(placeholderGroup);
+  
+  // Load the ISS 3D model
+  const loader = new GLTFLoader();
+  loader.load(
+    '/models/iss_stationary.glb',
+    (gltf) => {
+      const issModel = gltf.scene;
+      
+      // Scale the model to fit our scene
+      // The model might need different scaling than our calculated scale
+      const modelScale = 0.01; // Adjust this value based on the model size
+      issModel.scale.set(modelScale, modelScale, modelScale);
+      
+      // Center the model
+      const box = new THREE.Box3().setFromObject(issModel);
+      const center = box.getCenter(new THREE.Vector3());
+      issModel.position.sub(center);
+      
+      // Apply materials and lighting
+      issModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          
+          // Ensure materials work well with lighting
+          if (child.material) {
+            if (child.material.isMeshBasicMaterial) {
+              // Convert basic materials to standard materials for better lighting
+              const standardMaterial = new THREE.MeshStandardMaterial({
+                color: child.material.color,
+                map: child.material.map,
+                transparent: child.material.transparent,
+                opacity: child.material.opacity
+              });
+              child.material = standardMaterial;
+            }
+          }
+        }
+      });
+      
+      // Remove placeholder and add real model
+      group.remove(placeholderGroup);
+      group.add(issModel);
+      console.log('ISS 3D model loaded successfully');
+    },
+    (progress) => {
+      console.log('Loading ISS model:', (progress.loaded / progress.total * 100) + '% loaded');
+    },
+    (error) => {
+      console.error('Error loading ISS model:', error);
+      // Keep the placeholder as fallback, or create a more detailed fallback
+      console.log('Using placeholder ISS as fallback');
+      // Optionally, we could call createFallbackISS(group) here and remove the placeholder
+    }
+  );
+  
+  return group;
+}
 
+
+
+// Fallback ISS creation function in case the 3D model fails to load
+function createFallbackISS(group) {
+  console.log('Creating fallback ISS geometry...');
+  
   // --- Core Module (Cylindrical shape) ---
   const coreGeometry = new THREE.CylinderGeometry(1.5, 1.5, 5, 32);  // Cylindrical core module
   const coreMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
@@ -107,6 +197,4 @@ export function createISS() {
   const dockingPort2 = new THREE.Mesh(dockingPortGeometry, dockingPortMaterial);
   dockingPort2.position.set(-5, 0, 0);  // Position on the left side of the core
   group.add(dockingPort2);
-
-  return group;
 }

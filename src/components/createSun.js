@@ -11,8 +11,13 @@ export function createSun() {
   
   // Core sun sphere
   const geometry = new THREE.SphereGeometry(SUN_RADIUS * SCALE, 64, 64);
+  
+  // Load sun texture
+  const textureLoader = new THREE.TextureLoader();
+  const sunTexture = textureLoader.load('/textures/8k_sun.jpg');
+  
   const material = new THREE.MeshBasicMaterial({
-    color: 0xffdd00,
+    map: sunTexture,
     transparent: true,
     opacity: 1
   });
@@ -32,7 +37,7 @@ export function createSun() {
     { color: 0xff4400, size: 4.5, opacity: 0.06 },  // Red-orange
     { color: 0xff2200, size: 5.0, opacity: 0.04 },  // Deep orange
     { color: 0xff1100, size: 5.5, opacity: 0.02 },  // Red edge
-    { color: 0xff0000, size: 6.0, opacity: 0.7 }   // Outer red glow
+    { color: 0xff0000, size: 6.0, opacity: 0.02 }   // Outer red glow
   ];
 
   glowColors.forEach(({ color, size, opacity }) => {
@@ -41,7 +46,7 @@ export function createSun() {
       color: color,
       transparent: true,
       opacity: opacity,
-      side: THREE.BackSide, // Render on the inside
+      side: THREE.BackSide,
       blending: THREE.AdditiveBlending
     });
     const glow = new THREE.Mesh(glowGeometry, glowMaterial);
@@ -83,56 +88,68 @@ export function createSun() {
   corona.position.copy(sun.position);
   sunGroup.add(corona);
 
-  // Add lens flare
-  const textureLoader = new THREE.TextureLoader();
-  const flareTexture = textureLoader.load('/textures/lensflare.png', () => {
-    const flareColor = new THREE.Color(0xffffff);
-    const lensflare = new THREE.Lensflare();
-    
-    lensflare.addElement(new THREE.LensflareElement(flareTexture, 700, 0, flareColor));
-    lensflare.addElement(new THREE.LensflareElement(flareTexture, 200, 0.6));
-    lensflare.addElement(new THREE.LensflareElement(flareTexture, 120, 0.7));
-    lensflare.addElement(new THREE.LensflareElement(flareTexture, 350, 0.9));
-    
-    sun.add(lensflare);
-  });
-
-  // Existing lighting setup
-  const sunLight = new THREE.PointLight(0xffffff, 2.5, REAL_DISTANCE * SCALE * 2, 2);
-  sunLight.position.copy(sun.position);
+  // Sun light as directional light (parallel rays like real sunlight)
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+  
+  // Position the light at the sun's center
+  sunLight.position.set(REAL_DISTANCE * SCALE, 0, 0); // Same position as sun
+  
+  // Log initial positions
+  console.log('Initial sun position:', sun.position);
+  console.log('Initial sun light position:', sunLight.position);
+  console.log('REAL_DISTANCE * SCALE:', REAL_DISTANCE * SCALE);
+  
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.width = 2048;
   sunLight.shadow.mapSize.height = 2048;
   sunLight.shadow.camera.near = 1;
   sunLight.shadow.camera.far = REAL_DISTANCE * SCALE * 2;
+  sunLight.shadow.camera.left = -1000;
+  sunLight.shadow.camera.right = 1000;
+  sunLight.shadow.camera.top = 1000;
+  sunLight.shadow.camera.bottom = -1000;
 
-  const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  directionalLight.position.copy(sun.position);
-  directionalLight.castShadow = true;
-  
-  directionalLight.shadow.camera.near = 1;
-  directionalLight.shadow.camera.far = REAL_DISTANCE * SCALE * 2;
-  directionalLight.shadow.camera.left = -500;
-  directionalLight.shadow.camera.right = 500;
-  directionalLight.shadow.camera.top = 500;
-  directionalLight.shadow.camera.bottom = -500;
-
-  const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.3);
-
-  // Update the viewVector in the animation loop
   function updateCorona(camera) {
     const viewVector = new THREE.Vector3().subVectors(camera.position, corona.position);
-    coronaMaterial.uniforms.viewVector.value = viewVector;
+    corona.material.uniforms.viewVector.value.subVectors(camera.position, corona.position);
+  }
+
+  let logCounter = 0;
+  
+  function updateSunLight(earthPosition) {
+    // Always keep the directional light at the sun's center
+    sunLight.position.set(REAL_DISTANCE * SCALE, 0, 0);
+    
+    // Get sun's world position for logging
+    const sunWorldPosition = new THREE.Vector3();
+    sun.getWorldPosition(sunWorldPosition);
+    
+    // Console log positions for debugging (only every 60 frames to avoid spam)
+    logCounter++;
+    if (logCounter % 60 === 0) {
+      console.log('--- Sun/Light Positions (Frame', logCounter, ') ---');
+      console.log('Sun position:', sunWorldPosition);
+      console.log('Sun light position:', sunLight.position);
+      
+      if (earthPosition) {
+        console.log('Earth position:', earthPosition);
+        console.log('Light target position:', sunLight.target.position);
+      }
+    }
+    
+    // Point the directional light toward Earth
+    if (earthPosition) {
+      sunLight.target.position.copy(earthPosition);
+      sunLight.target.updateMatrixWorld();
+    }
   }
 
   return { 
     sunGroup,
-    sun, 
-    sunLight, 
-    ambientLight, 
-    directionalLight,
-    hemisphereLight,
-    updateCorona // Export the update function
+    sun,
+    sunLight,
+    sunLightTarget: sunLight.target,
+    updateCorona,
+    updateSunLight
   };
 }
